@@ -1,0 +1,31 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Point {
+  id        Int    @id @default(autoincrement())
+  nim       String
+  pertemuan String // Contoh data = 3M41A-ALG-1
+  poin      String // Contoh data = 1,1,0
+}
+
+model Pertemuan {
+  id        String @id // Contoh data = 3M41A-ALG-1
+  kelas     String
+  makul     Makul  @default(ALG)
+  pertemuan String
+  quiz      String // Contoh data = "membuat login page,membuat register page,membuat home page"
+}
+
+enum Makul {
+  ALG
+  DES
+}

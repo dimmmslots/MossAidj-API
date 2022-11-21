@@ -1,0 +1,26 @@
+{
+  "todo": [
+    {
+      "assignedTo": {
+        "name": "Vouivre"
+      },
+      "category": "Fitur",
+      "creation_time": "2022-11-20T21:25:59.815Z",
+      "description": {
+        "content": "Membuat endpoint untuk fetch data semua poin berdasarkan kode pertemuan",
+        "mime": "text/markdown"
+      },
+      "details": {
+        "content": "- Membuat Controller\n- Membuat Route\n- Menambah Route pada express",
+        "mime": "text/markdown"
+      },
+      "id": "1",
+      "prio": 0,
+      "references": [],
+      "title": "Membuat endpoint GET /poin/{kode-pertemuan}"
+    }
+  ],
+  "in-progress": [],
+  "testing": [],
+  "done": []
+}
