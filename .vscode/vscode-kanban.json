@@ -2,6 +2,28 @@
   "todo": [
     {
       "assignedTo": {
+        "name": "dimmmslots"
+      },
+      "category": "Fitur",
+      "creation_time": "2022-11-21T18:01:04.979Z",
+      "details": {
+        "content": "Langkah-langkah :\n1. Mengecek apakah kode pertemuan ada pada tabel pertemuan, jika ada dapat melanjutkan input data, jika tidak maka gagal\n2. Mengecek apakah nim sudah ada pada kode pertemuan tersebut, jika belum maka tambahkan, jika sudah maka edit datanya\n",
+        "mime": "text/markdown"
+      },
+      "id": "2",
+      "references": [],
+      "title": "Membuat endpoint POST /poin/{kode-pertemuan}",
+      "description": {
+        "content": "Membuat endpoint untuk menambahkan data poin mahasiswa pada kode mahasiswa yang dicantumkan",
+        "mime": "text/markdown"
+      }
+    }
+  ],
+  "in-progress": [],
+  "testing": [],
+  "done": [
+    {
+      "assignedTo": {
         "name": "Vouivre"
       },
       "category": "Fitur",
@@ -19,8 +41,5 @@
       "references": [],
       "title": "Membuat endpoint GET /poin/{kode-pertemuan}"
     }
-  ],
-  "in-progress": [],
-  "testing": [],
-  "done": []
+  ]
 }
