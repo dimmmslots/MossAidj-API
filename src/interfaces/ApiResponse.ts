@@ -1,24 +1,12 @@
-interface Poin {
-    pertemuan: string;
-    nim: string;
-    poin: string;
-}
-
-interface getPoinByKodePertemuanResponse {
+interface pertemuan {
+    id: string;
     kelas: string;
     makul: string;
     pertemuan: string;
     quiz: string;
-    data: Poin[];
-}
-
-interface failedResponse {
-    message: string;
 }
 
 export {
-    Poin,
-    getPoinByKodePertemuanResponse,
-    failedResponse
+    pertemuan
 }
 

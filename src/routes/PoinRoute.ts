@@ -9,4 +9,6 @@ router.post('/:kode_pertemuan', PoinController.createPoint);
 
 router.put('/:kode_pertemuan/:nim', PoinController.editPoint);
 
+router.get('/generate/:kode_pertemuan', PoinController.generatePoinByKodePertemuan);
+
 module.exports = router;

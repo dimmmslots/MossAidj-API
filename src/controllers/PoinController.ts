@@ -1,4 +1,5 @@
-import { getPoinByKodePertemuanResponse } from "../interfaces/ApiResponse";
+import { Prisma } from "@prisma/client";
+import { pertemuan } from "../interfaces/ApiResponse";
 
 const prisma = require("../configs/database");
 
@@ -12,15 +13,6 @@ const PoinController = {
         },
       });
 
-      const quiz = await prisma.pertemuan.findUnique({
-        where: {
-          id: kode_pertemuan,
-        },
-        select: {
-          quiz: true,
-        },
-      });
-
       if (poin.length === 0) {
         return res.status(404).json({
           message:
@@ -30,23 +22,76 @@ const PoinController = {
 
       poin.map((p) => {
         delete p.pertemuan;
+        delete p.id;
       });
 
       let split = kode_pertemuan.split("-");
       let kelas: string = split[0];
       let makul: string = split[1];
       let pertemuan: string = split[2];
-      const response: getPoinByKodePertemuanResponse = {
+      const response = {
         kelas: kelas,
         makul: makul,
         pertemuan: pertemuan,
-        quiz: quiz.quiz,
         data: poin,
       };
       res.json(response);
     } catch (error) {
       console.log(error);
       res.status(500).json({
+        message: error.message,
+      });
+    }
+  },
+
+  generatePoinByKodePertemuan: async (req, res) => {
+    try {
+      const { kode_pertemuan } = req.params;
+      const pertemuanExists : pertemuan = await prisma.pertemuan.findUnique({
+        where: {
+          id: kode_pertemuan,
+        },
+      });
+      if (!pertemuanExists) {
+        return res.status(404).json({
+          message:
+            "Pertemuan dengan kode " + kode_pertemuan + " tidak ditemukan",
+        });
+      }
+      const table_name = ("db_" + kode_pertemuan.substr(0, 9))
+        .toLowerCase()
+        .replace(/-/g, "_");
+      let query = "SELECT * FROM " + table_name;
+      // return res.json(table_name);
+      const mahasiswa = await prisma.$queryRawUnsafe(query);
+      let data = [];
+      let quiz = pertemuanExists.quiz
+      let poin = "";
+      if (quiz === "") {
+        poin = "";
+      } else {
+        const quiz_length = quiz.split(",").length;
+        for (let i = 1; i <= quiz_length; i++) {
+          i === quiz_length ? (poin += "0") : (poin += "0,");
+        }
+      }
+      mahasiswa.map((item) => {
+        data.push({
+          nim: item.nim,
+          pertemuan: kode_pertemuan,
+          poin: poin,
+          quiz: pertemuanExists.quiz,
+        });
+      });
+      const poinCreated = await prisma.point.createMany({
+        data: data,
+      });
+      return res.json({
+        message: "Poin berhasil dibuat",
+        data: poinCreated,
+      });
+    } catch (error) {
+      return res.status(500).json({
         message: error.message,
       });
     }
@@ -82,18 +127,8 @@ const PoinController = {
       // check if nim already exist, if exist then update the point
       const isExist = nims.find((n) => n.nim === nim);
       if (isExist) {
-        const editedPoint = await prisma.point.update({
-          where: {
-            id: isExist.id,
-          },
-          data: {
-            poin: poin,
-          },
-        });
-        delete editedPoint.id;
-        return res.json({
-          message: "Poin berhasil diubah",
-          data: editedPoint,
+        return res.status(400).json({
+          message: "Poin dengan nim " + nim + " sudah ada",
         });
       }
 

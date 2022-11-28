@@ -1,11 +1,12 @@
 const prisma = require("../configs/database");
+import { pertemuan } from "../interfaces/ApiResponse";
 
 const PertemuanController = {
   createPertemuan: async (req, res) => {
     try {
       const { kelas, makul, pertemuan } = req.body;
       const kode_pertemuan = kelas + "-" + makul + "-" + pertemuan;
-      const pertemuanExists = await prisma.pertemuan.findUnique({
+      const pertemuanExists: pertemuan = await prisma.pertemuan.findUnique({
         where: {
           id: kode_pertemuan,
         },
@@ -15,16 +16,16 @@ const PertemuanController = {
           message: "Pertemuan dengan kode " + kode_pertemuan + " sudah ada",
         });
       }
+      const data: pertemuan = {
+        id: kode_pertemuan,
+        kelas: kelas,
+        makul: makul,
+        pertemuan: pertemuan,
+        quiz: "",
+      };
       const pertemuanCreated = await prisma.pertemuan.create({
-        data: {
-          id: kode_pertemuan,
-          kelas: kelas,
-          makul: makul,
-          pertemuan: pertemuan,
-          quiz: "",
-        },
+        data: data,
       });
-      delete pertemuanCreated.quiz;
       return res.json({
         message: "Pertemuan berhasil dibuat",
         data: pertemuanCreated,
@@ -54,7 +55,7 @@ const PertemuanController = {
           quiz += item[1] + ",";
         }
       });
-      const pertemuanExists = await prisma.pertemuan.findUnique({
+      const pertemuanExists: pertemuan = await prisma.pertemuan.findUnique({
         where: {
           id: id_pertemuan,
         },
@@ -64,6 +65,58 @@ const PertemuanController = {
           message: "Pertemuan dengan kode " + id_pertemuan + " tidak ada",
         });
       }
+
+      let mahasiswa = await prisma.point.findMany({
+        where: {
+          pertemuan: pertemuanExists.id,
+        },
+      });
+      let old_poin_length = 0;
+      let new_poin_length = quiz.split(",").length;
+      if (mahasiswa.length > 0) {
+        if (mahasiswa[0].poin !== "") {
+          old_poin_length = mahasiswa[0].poin.split(",").length;
+        } else {
+          old_poin_length = 0;
+        }
+      }
+
+      // compare the length of quiz and the length of the array
+      if (new_poin_length > old_poin_length) {
+        let diff = new_poin_length - old_poin_length;
+        let addition = "";
+        for (let i = 1; i <= diff; i++) {
+          i === diff ? (addition += "0") : (addition += "0,");
+        }
+        let response = [];
+        mahasiswa.forEach(async (item) => {
+          item.poin += addition;
+          response.push(item);
+          await prisma.point.update({
+            where: {
+              id: item.id,
+            },
+            data: {
+              poin: item.poin,
+            },
+          });
+        });
+      } else if (new_poin_length < old_poin_length) {
+        let diff = old_poin_length - new_poin_length;
+        // substract the poin by 2 * diff from the back of the string
+        mahasiswa.forEach(async (item) => {
+          item.poin = item.poin.slice(0, -2 * diff);
+          await prisma.point.update({
+            where: {
+              id: item.id,
+            },
+            data: {
+              poin: item.poin,
+            },
+          });
+        });
+      }
+
       const pertemuanUpdated = await prisma.pertemuan.update({
         where: {
           id: id_pertemuan,
@@ -76,7 +129,11 @@ const PertemuanController = {
         message: "Quiz pertemuan berhasil diubah",
         data: pertemuanUpdated,
       });
-    } catch (error) {}
+    } catch (error) {
+      return res.status(500).json({
+        message: error.message,
+      });
+    }
   },
 };
 

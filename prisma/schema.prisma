@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,22 +7,38 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Point {
-  id        Int    @id @default(autoincrement())
-  nim       String
-  pertemuan String // Contoh data = 3M41A-ALG-1
-  poin      String // Contoh data = 1,1,0
+model pertemuan {
+  id                               String          @id
+  kelas                            String
+  makul                            pertemuan_makul
+  pertemuan                        String
+  quiz                             String          @unique
+  point_pertemuanTopoint_pertemuan point[]         @relation("pertemuanTopoint_pertemuan")
+  point_pertemuanTopoint_quiz      point[]         @relation("pertemuanTopoint_quiz")
+
+  @@index([quiz], map: "quiz")
 }
 
-model Pertemuan {
-  id        String @id // Contoh data = 3M41A-ALG-1
-  kelas     String
-  makul     Makul  @default(ALG)
-  pertemuan String
-  quiz      String // Contoh data = "membuat login page,membuat register page,membuat home page"
+model point {
+  id                                   Int       @id @default(autoincrement())
+  nim                                  String
+  pertemuan                            String
+  poin                                 String
+  quiz                                 String
+  pertemuan_pertemuanTopoint_pertemuan pertemuan @relation("pertemuanTopoint_pertemuan", fields: [pertemuan], references: [id], map: "kode_pertemuan")
+  pertemuan_pertemuanTopoint_quiz      pertemuan @relation("pertemuanTopoint_quiz", fields: [quiz], references: [quiz], map: "quiz_name")
+
+  @@index([pertemuan], map: "kode_pertemuan")
+  @@index([quiz], map: "quiz_name")
 }
 
-enum Makul {
+model db_3m41a_alg {
+  id   Int    @id @default(autoincrement())
+  nim  String @db.VarChar(11)
+  nama String @db.VarChar(64)
+}
+
+enum pertemuan_makul {
   ALG
   DES
 }
