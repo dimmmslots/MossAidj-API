@@ -80,18 +80,30 @@ const PertemuanController = {
           old_poin_length = 0;
         }
       }
-
       // compare the length of quiz and the length of the array
-      if (new_poin_length > old_poin_length) {
+      if (new_poin_length === 0) {
+        mahasiswa.map(async (item) => {
+          await prisma.point.update({
+            where: {
+              id: item.id,
+            },
+            data: {
+              poin: "",
+            },
+          });
+        })
+      } else if (new_poin_length > old_poin_length) {
         let diff = new_poin_length - old_poin_length;
         let addition = "";
-        for (let i = 1; i <= diff; i++) {
-          i === diff ? (addition += "0") : (addition += "0,");
-        }
-        let response = [];
+        if(diff === 1) {
+          addition = ",0";
+        } else {
+          for (let i = 1; i <= diff; i++) {
+            i === diff ? (addition += "0") : (addition += "0,");
+          }
+        } 
         mahasiswa.forEach(async (item) => {
           item.poin += addition;
-          response.push(item);
           await prisma.point.update({
             where: {
               id: item.id,
