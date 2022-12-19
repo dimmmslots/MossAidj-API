@@ -37,109 +37,137 @@ const PertemuanController = {
     }
   },
 
-  editQuizPertemuan: async (req, res) => {
+  editQuizLabelPertemuan: async (req, res) => {
     try {
-      const id_pertemuan = req.params.kode_pertemuan;
-      // iterate through req.body and insert it into an array
-      let array = [];
-      const body = Object.entries(req.body);
-      body.forEach((item) => {
-        array.push(item);
-      });
-      array = array.splice(3, array.length);
-      let quiz = "";
-      array.map((item, index) => {
-        if (index === array.length - 1) {
-          quiz += item[1];
-        } else {
-          quiz += item[1] + ",";
-        }
-      });
-      const pertemuanExists: pertemuan = await prisma.pertemuan.findUnique({
+      // get value from url params
+      const { kode_pertemuan } = req.params;
+      // check kd_kelas format with regex
+      const regex = new RegExp(
+        /^[0-9][M|P][0-9][0-9]A-((ALG)|(DES))-\d{1}(\d)?$/i
+      );
+      if (!regex.test(kode_pertemuan)) {
+        return res.status(400).json({
+          message: "Kode kelas tidak sesuai format",
+        });
+      }
+
+      // check if pertemuan exists
+      const pertemuanExists = await prisma.pertemuan.findUnique({
         where: {
-          id: id_pertemuan,
+          id: kode_pertemuan,
         },
       });
       if (!pertemuanExists) {
-        return res.status(400).json({
-          message: "Pertemuan dengan kode " + id_pertemuan + " tidak ada",
+        return res.status(404).json({
+          message:
+            "Pertemuan dengan kode " + kode_pertemuan + " tidak ditemukan",
         });
       }
 
-      let mahasiswa = await prisma.point.findMany({
+      // get value from body
+      let { label } = req.body;
+      label = label.join(",");
+      let quizUpdated = await prisma.pertemuan.update({
         where: {
-          pertemuan: pertemuanExists.id,
-        },
-      });
-      let old_poin_length = 0;
-      let new_poin_length = quiz.split(",").length;
-      if (mahasiswa.length > 0) {
-        if (mahasiswa[0].poin !== "") {
-          old_poin_length = mahasiswa[0].poin.split(",").length;
-        } else {
-          old_poin_length = 0;
-        }
-      }
-      // compare the length of quiz and the length of the array
-      if (new_poin_length === 0) {
-        mahasiswa.map(async (item) => {
-          await prisma.point.update({
-            where: {
-              id: item.id,
-            },
-            data: {
-              poin: "",
-            },
-          });
-        })
-      } else if (new_poin_length > old_poin_length) {
-        let diff = new_poin_length - old_poin_length;
-        let addition = "";
-        if(diff === 1) {
-          addition = ",0";
-        } else {
-          for (let i = 1; i <= diff; i++) {
-            i === diff ? (addition += "0") : (addition += "0,");
-          }
-        } 
-        mahasiswa.forEach(async (item) => {
-          item.poin += addition;
-          await prisma.point.update({
-            where: {
-              id: item.id,
-            },
-            data: {
-              poin: item.poin,
-            },
-          });
-        });
-      } else if (new_poin_length < old_poin_length) {
-        let diff = old_poin_length - new_poin_length;
-        // substract the poin by 2 * diff from the back of the string
-        mahasiswa.forEach(async (item) => {
-          item.poin = item.poin.slice(0, -2 * diff);
-          await prisma.point.update({
-            where: {
-              id: item.id,
-            },
-            data: {
-              poin: item.poin,
-            },
-          });
-        });
-      }
-
-      const pertemuanUpdated = await prisma.pertemuan.update({
-        where: {
-          id: id_pertemuan,
+          id: kode_pertemuan,
         },
         data: {
-          quiz: quiz,
+          quiz: label,
         },
       });
+
+      const { id, ...data } = quizUpdated;
+
       return res.json({
-        message: "Quiz pertemuan berhasil diubah",
-        data: pertemuanUpdated,
+        message: "Quiz berhasil diupdate",
+        data: data,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        message: error.message,
+      });
+    }
+  },
+
+  editQuizPertemuan: async (req, res) => {
+    try {
+      const { kode_pertemuan } = req.params;
+      // check kd_kelas format with regex
+      const regex = new RegExp(
+        /^[0-9][M|P][0-9][0-9]A-((ALG)|(DES))-\d{1}(\d)?$/i
+      );
+      if (!regex.test(kode_pertemuan)) {
+        return res.status(400).json({
+          message: "Kode kelas tidak sesuai format",
+        });
+      }
+
+      // check if pertemuan exists
+      const pertemuanExists = await prisma.pertemuan.findUnique({
+        where: {
+          id: kode_pertemuan,
+        },
+      });
+      if (!pertemuanExists) {
+        return res.status(404).json({
+          message:
+            "Pertemuan dengan kode " + kode_pertemuan + " tidak ditemukan",
+        });
+      }
+
+      let { label } = req.body;
+      let oldLabel = pertemuanExists.quiz.split(",");
+
+      let filteredLabel = oldLabel.filter((item, index) => {
+        return !label.includes(item);
+      });
+
+      let indices = oldLabel
+        .map((item, index) => {
+          if (!label.includes(item)) {
+            return index;
+          }
+        })
+        .filter((item) => item !== undefined);
+
+      let quizUpdated = await prisma.pertemuan.update({
+        where: {
+          id: kode_pertemuan,
+        },
+        data: {
+          quiz: label.join(","),
+        },
+      });
+      // get all poin with pertemuan id and delete poin with indices
+      let poin = await prisma.point.findMany({
+        where: {
+          pertemuan: kode_pertemuan,
+        },
+      });
+
+      let after = [];
+      let poin_mahasiswa = poin;
+      poin_mahasiswa.map((item, index) => {
+        let oldPoint = item.poin.split(",");
+        let newPoint = oldPoint.filter((item, index) => {
+          return !indices.includes(index);
+        });
+        after.push(newPoint.join(","));
+      });
+
+      after.forEach(async (item, index) => {
+        await prisma.point.update({
+          where: {
+            id: poin[index].id,
+          },
+          data: {
+            poin: item,
+          },
+        });
+      });
+
+      return res.json({
+        message: "Quiz berhasil diupdate"
       });
     } catch (error) {
       return res.status(500).json({
