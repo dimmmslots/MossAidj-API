@@ -1,10 +1,16 @@
 const prisma = require("../configs/database");
-import { pertemuan } from "../interfaces/ApiResponse";
+import { bodyRequest } from "../validators/bodyRequest";
+import { pertemuan } from "../types/ApiResponse";
+import { isExist } from "../utils/isExist";
 
 const PertemuanController = {
   createPertemuan: async (req, res) => {
     try {
       const { kelas, makul, pertemuan } = req.body;
+      // validate body
+      const validate = await bodyRequest.createPertemuan.validateAsync(
+        req.body
+      );
       const kode_pertemuan = kelas + "-" + makul + "-" + pertemuan;
       const pertemuanExists: pertemuan = await prisma.pertemuan.findUnique({
         where: {
@@ -21,14 +27,14 @@ const PertemuanController = {
         kelas: kelas,
         makul: makul,
         pertemuan: pertemuan,
-        quiz: "",
+        quiz: kode_pertemuan,
       };
       const pertemuanCreated = await prisma.pertemuan.create({
         data: data,
       });
-      return res.json({
+      return res.status(201).json({
         message: "Pertemuan berhasil dibuat",
-        data: pertemuanCreated,
+        data: data.id,
       });
     } catch (error) {
       return res.status(500).json({
@@ -64,24 +70,47 @@ const PertemuanController = {
         });
       }
 
-      // get value from body
-      let { label } = req.body;
-      label = label.join(",");
-      let quizUpdated = await prisma.pertemuan.update({
-        where: {
-          id: kode_pertemuan,
-        },
-        data: {
-          quiz: label,
-        },
-      });
-
-      const { id, ...data } = quizUpdated;
-
-      return res.json({
-        message: "Quiz berhasil diupdate",
-        data: data,
-      });
+      let { oldLabel, newLabel } = req.body;
+      // validate body
+      const validate = await bodyRequest.editQuizLabelPertemuan.validateAsync(
+        req.body
+      );
+      oldLabel = oldLabel.toLowerCase();
+      newLabel = newLabel.toLowerCase();
+      let oldQuiz = pertemuanExists.quiz.split(",");
+      if (!oldQuiz.includes(oldLabel)) {
+        return res.status(400).json({
+          message: "Label quiz '" + oldLabel + "' tidak ditemukan",
+        });
+      } else {
+        if (newLabel == oldLabel) {
+          return res.status(200).json({
+            message: "Label quiz tidak diubah",
+          });
+        } else {
+          if (oldQuiz.includes(newLabel)) {
+            return res.status(400).json({
+              message: "Label quiz '" + newLabel + "' sudah ada",
+            });
+          } else {
+            let index = oldQuiz.indexOf(oldLabel);
+            oldQuiz[index] = newLabel;
+            let newQuiz = oldQuiz.join(",");
+            const pertemuanUpdated = await prisma.pertemuan.update({
+              where: {
+                id: kode_pertemuan,
+              },
+              data: {
+                quiz: newQuiz,
+              },
+            });
+            return res.json({
+              message: "Label quiz berhasil diubah",
+              data: pertemuanUpdated,
+            });
+          }
+        }
+      }
     } catch (error) {
       return res.status(500).json({
         message: error.message,
@@ -89,7 +118,7 @@ const PertemuanController = {
     }
   },
 
-  editQuizPertemuan: async (req, res) => {
+  deleteQuizPertemuan: async (req, res) => {
     try {
       const { kode_pertemuan } = req.params;
       // check kd_kelas format with regex
@@ -102,12 +131,8 @@ const PertemuanController = {
         });
       }
 
-      // check if pertemuan exists
-      const pertemuanExists = await prisma.pertemuan.findUnique({
-        where: {
-          id: kode_pertemuan,
-        },
-      });
+      const pertemuanExists = await isExist.pertemuan(kode_pertemuan);
+
       if (!pertemuanExists) {
         return res.status(404).json({
           message:
@@ -116,59 +141,129 @@ const PertemuanController = {
       }
 
       let { label } = req.body;
+      // validate body
+      const validate = await bodyRequest.deleteQuizPertemuan.validateAsync(
+        req.body
+      );
+      label = label.toLowerCase();
       let oldLabel = pertemuanExists.quiz.split(",");
 
-      let filteredLabel = oldLabel.filter((item, index) => {
-        return !label.includes(item);
+      if (!oldLabel.includes(label)) {
+        return res.status(400).json({
+          message: "Label quiz '" + label + "' tidak ditemukan",
+        });
+      } else {
+        const poin = await prisma.point.findMany({
+          where: {
+            pertemuan: kode_pertemuan,
+          },
+        });
+        let index = oldLabel.indexOf(label);
+        let newLabel = oldLabel.filter((item, i) => i !== index);
+        let newQuiz = newLabel.join(",");
+        poin.forEach(async (item) => {
+          let oldPoin = item.poin.split(",");
+          let newPoin = oldPoin.filter((item, i) => i !== index);
+          let newPoinString = newPoin.join(",");
+          await prisma.point.update({
+            where: {
+              id: item.id,
+            },
+            data: {
+              poin: newPoinString,
+            },
+          });
+        });
+        const pertemuanUpdated = await prisma.pertemuan.update({
+          where: {
+            id: kode_pertemuan,
+          },
+          data: {
+            quiz: newQuiz,
+          },
+        });
+        return res.json({
+          message: "Label quiz berhasil dihapus",
+          data: pertemuanUpdated,
+        });
+      }
+    } catch (error) {
+      return res.status(500).json({
+        message: error.message,
       });
+    }
+  },
 
-      let indices = oldLabel
-        .map((item, index) => {
-          if (!label.includes(item)) {
-            return index;
-          }
-        })
-        .filter((item) => item !== undefined);
-
-      let quizUpdated = await prisma.pertemuan.update({
-        where: {
-          id: kode_pertemuan,
-        },
-        data: {
-          quiz: label.join(","),
-        },
-      });
-      // get all poin with pertemuan id and delete poin with indices
-      let poin = await prisma.point.findMany({
+  addQuizPertemuan: async (req, res) => {
+    try {
+      // cek kode pertemuan dengan regex
+      const { kode_pertemuan } = req.params;
+      const regex = new RegExp(
+        /^[0-9][M|P][0-9][0-9]A-((ALG)|(DES))-\d{1}(\d)?$/i
+      );
+      if (!regex.test(kode_pertemuan)) {
+        return res.status(400).json({
+          message: "Kode kelas tidak sesuai format",
+        });
+      }
+      const pertemuanExists = await isExist.pertemuan(kode_pertemuan);
+      if (!pertemuanExists) {
+        return res.status(404).json({
+          message:
+            "Pertemuan dengan kode " + kode_pertemuan + " tidak ditemukan",
+        });
+      }
+      let oldLabels = pertemuanExists.quiz.split(",");
+      let { label } = req.body;
+      // validate body
+      const validate = await bodyRequest.addQuizPertemuan.validateAsync(
+        req.body
+      );
+      if (typeof label !== "string") {
+        return res.status(400).json({
+          message: "Label quiz harus berupa string",
+        });
+      }
+      label = label.toLowerCase();
+      const poin = await prisma.point.findMany({
         where: {
           pertemuan: kode_pertemuan,
         },
       });
 
-      let after = [];
-      let poin_mahasiswa = poin;
-      poin_mahasiswa.map((item, index) => {
-        let oldPoint = item.poin.split(",");
-        let newPoint = oldPoint.filter((item, index) => {
-          return !indices.includes(index);
+      if (oldLabels.includes(label)) {
+        return res.status(400).json({
+          message: "Label quiz '" + label + "' sudah ada",
         });
-        after.push(newPoint.join(","));
-      });
-
-      after.forEach(async (item, index) => {
-        await prisma.point.update({
+      } else {
+        oldLabels.push(label);
+        let newLabels = oldLabels.join(",");
+        poin.forEach(async (item) => {
+          let oldPoin = item.poin.split(",");
+          oldPoin.push("0");
+          let newPoin = oldPoin.join(",");
+          await prisma.point.update({
+            where: {
+              id: item.id,
+            },
+            data: {
+              poin: newPoin,
+            },
+          });
+        });
+        const pertemuanUpdated = await prisma.pertemuan.update({
           where: {
-            id: poin[index].id,
+            id: kode_pertemuan,
           },
           data: {
-            poin: item,
+            quiz: newLabels,
           },
         });
-      });
-
-      return res.json({
-        message: "Quiz berhasil diupdate"
-      });
+        return res.json({
+          message: "Label quiz berhasil ditambahkan",
+          data: pertemuanUpdated,
+        });
+      }
     } catch (error) {
       return res.status(500).json({
         message: error.message,

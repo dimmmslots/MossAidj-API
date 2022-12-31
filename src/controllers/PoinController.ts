@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { pertemuan } from "../interfaces/ApiResponse";
+import { pertemuan } from "../types/ApiResponse";
 
 const prisma = require("../configs/database");
 

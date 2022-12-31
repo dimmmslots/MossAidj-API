@@ -1,4 +1,4 @@
-interface pertemuan {
+type pertemuan = {
     id: string;
     kelas: string;
     makul: string;

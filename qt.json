@@ -1,0 +1,177 @@
+{
+    "kelas": "3M41A",
+    "makul": "ALG",
+    "pertemuan": "1",
+    "data": [
+        {
+            "nim": "22.240.0001",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0002",
+            "poin": "1,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0008",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0011",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0012",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0023",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0031",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0042",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0043",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0071",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0093",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0120",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0134",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0136",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0138",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0139",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0147",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0151",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0159",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0161",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0162",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0163",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0164",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0165",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0166",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0167",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0168",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0170",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0171",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0173",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0178",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0181",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0182",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        },
+        {
+            "nim": "22.240.0183",
+            "poin": "0,0,0",
+            "quiz": "create,update,delete"
+        }
+    ]
+}

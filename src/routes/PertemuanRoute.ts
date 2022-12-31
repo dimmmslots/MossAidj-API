@@ -7,6 +7,8 @@ router.post('/', PertemuanController.createPertemuan);
 
 router.put('/label/:kode_pertemuan', PertemuanController.editQuizLabelPertemuan);
 
-router.put('/quiz/:kode_pertemuan', PertemuanController.editQuizPertemuan);
+router.post('/delquiz/:kode_pertemuan', PertemuanController.deleteQuizPertemuan);
+
+router.post('/addquiz/:kode_pertemuan', PertemuanController.addQuizPertemuan);
 
 module.exports = router;
