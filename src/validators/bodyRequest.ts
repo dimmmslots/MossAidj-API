@@ -15,5 +15,11 @@ export const bodyRequest = {
     }),
     addQuizPertemuan: Joi.object({
         label: Joi.string().required()
-    })
+    }),
+    createPoint: Joi.object({
+        nim: Joi.string().required(),
+    }),
+    editPoint: Joi.object({
+        poin: Joi.string().required(),
+    }),
 }

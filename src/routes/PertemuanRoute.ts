@@ -1,14 +1,22 @@
-import { Router } from 'express';
-import PertemuanController from '../controllers/PertemuanController';
+import { Router } from "express";
+import PertemuanController from "../controllers/PertemuanController";
 
 const router = Router();
 
-router.post('/', PertemuanController.createPertemuan);
+router.post("/", PertemuanController.createPertemuan);
 
-router.put('/label/:kode_pertemuan', PertemuanController.editQuizLabelPertemuan);
+router.post(
+  "/label/:kode_pertemuan",
+  PertemuanController.editQuizLabelPertemuan
+);
 
-router.post('/delquiz/:kode_pertemuan', PertemuanController.deleteQuizPertemuan);
+router.post(
+  "/delquiz/:kode_pertemuan",
+  PertemuanController.deleteQuizPertemuan
+);
 
-router.post('/addquiz/:kode_pertemuan', PertemuanController.addQuizPertemuan);
+router.post("/addquiz/:kode_pertemuan", PertemuanController.addQuizPertemuan);
+
+router.delete("/:kode_pertemuan", PertemuanController.deletePertemuan);
 
 module.exports = router;

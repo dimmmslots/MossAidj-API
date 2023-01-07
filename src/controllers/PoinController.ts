@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { pertemuan } from "../types/ApiResponse";
+import { bodyRequest } from "../validators/bodyRequest";
 
 const prisma = require("../configs/database");
 
@@ -7,6 +8,17 @@ const PoinController = {
   getByKodePertemuan: async (req, res) => {
     try {
       const { kode_pertemuan } = req.params;
+      const pertemuanExists: pertemuan = await prisma.pertemuan.findUnique({
+        where: {
+          id: kode_pertemuan,
+        },
+      });
+      if (!pertemuanExists) {
+        return res.status(404).json({
+          message:
+            "Pertemuan dengan kode " + kode_pertemuan + " tidak ditemukan",
+        });
+      }
       const poin = await prisma.point.findMany({
         where: {
           pertemuan: kode_pertemuan,
@@ -35,7 +47,10 @@ const PoinController = {
         pertemuan: pertemuan,
         data: poin,
       };
-      res.json(response);
+      res.status(200).json({
+        message: "Poin berhasil ditemukan",
+        data: response,
+      });
     } catch (error) {
       console.log(error);
       res.status(500).json({
@@ -47,7 +62,7 @@ const PoinController = {
   generatePoinByKodePertemuan: async (req, res) => {
     try {
       const { kode_pertemuan } = req.params;
-      const pertemuanExists : pertemuan = await prisma.pertemuan.findUnique({
+      const pertemuanExists: pertemuan = await prisma.pertemuan.findUnique({
         where: {
           id: kode_pertemuan,
         },
@@ -65,7 +80,7 @@ const PoinController = {
       // return res.json(table_name);
       const mahasiswa = await prisma.$queryRawUnsafe(query);
       let data = [];
-      let quiz = pertemuanExists.quiz
+      let quiz = pertemuanExists.quiz;
       let poin = "";
       if (quiz === "") {
         poin = "";
@@ -100,7 +115,8 @@ const PoinController = {
   createPoint: async (req, res) => {
     try {
       const { kode_pertemuan } = req.params;
-      const { nim, poin } = req.body;
+      const validate = await bodyRequest.createPoint.validateAsync(req.body);
+      const { nim } = req.body;
       // check if pertemuan exists
       const pertemuan = await prisma.pertemuan.findUnique({
         where: {
@@ -133,22 +149,33 @@ const PoinController = {
       }
 
       // if nim not exist, then create new point
-      const point = await prisma.point.create({
+      let label_length = pertemuan.quiz.split(",").length;
+      let poin = "0" + ",0".repeat(label_length - 1);
+
+      const pointCreated = await prisma.point.create({
         data: {
           nim: nim,
-          poin: poin,
           pertemuan: kode_pertemuan,
+          poin: poin,
+          quiz: pertemuan.quiz,
         },
       });
-      // strip id from response
-      delete point.id;
-      res.json({
+      res.status(201).json({
         message: "Poin berhasil ditambahkan",
-        data: point,
+        data: {
+          nim: nim,
+          pertemuan: kode_pertemuan,
+          poin: poin,
+          quiz: pertemuan.quiz,
+        },
       });
     } catch (error) {
-      console.log(error);
-      res.status(500).json({
+      if (error.isJoi) {
+        return res.status(400).json({
+          message: error.details[0].message,
+        });
+      }
+      return res.status(500).json({
         message: error.message,
       });
     }
@@ -156,8 +183,23 @@ const PoinController = {
 
   editPoint: async (req, res) => {
     try {
-      const { kode_pertemuan, nim } = req.params;
-      const dataExist = await prisma.point.findFirst({
+      const {kode_pertemuan, nim} = req.params;
+      const validate = await bodyRequest.editPoint.validateAsync(req.body);
+      const {poin} = req.body;
+      // check if pertemuan exists
+      const pertemuan = await prisma.pertemuan.findUnique({
+        where: {
+          id: kode_pertemuan,
+        },
+      });
+      if (!pertemuan) {
+        return res.status(404).json({
+          message:
+            "Pertemuan dengan kode " + kode_pertemuan + " tidak ditemukan",
+        });
+      }
+      // check if point exists
+      const point = await prisma.point.findFirst({
         where: {
           AND: [
             {
@@ -169,38 +211,87 @@ const PoinController = {
           ],
         },
       });
-      if (!dataExist) {
+      if (!point) {
         return res.status(404).json({
-          message: "Data tidak ditemukan",
+          message:
+            "Poin dengan nim " + nim + " tidak ditemukan",
         });
       }
-      let array = [];
-      const body = Object.entries(req.body);
-      body.forEach((item) => {
-        array.push(item);
-      });
-      // delete the first 3 items in the array
-      array = array.splice(2, array.length);
-      let poin = "";
-      array.map((item, index) => {
-        if (index === array.length - 1) {
-          poin += item[1];
-        } else {
-          poin += item[1] + ",";
-        }
-      });
-      const editedPoint = await prisma.point.update({
+      // check if poin is valid
+      const quiz_length = pertemuan.quiz.split(",").length;
+      const poin_length = poin.split(",").length;
+      if (quiz_length !== poin_length) {
+        return res.status(400).json({
+          message: "Panjang poin tidak valid",
+        });
+      }
+      // update point
+      const pointUpdated = await prisma.point.update({
         where: {
-          id: dataExist.id,
+          id: point.id,
         },
         data: {
           poin: poin,
         },
       });
-      delete editedPoint.id;
-      return res.json({
+      res.status(200).json({
         message: "Poin berhasil diubah",
-        data: editedPoint,
+        data: pointUpdated,
+      });
+    } catch (error) {
+      if (error.isJoi) {
+        return res.status(400).json({
+          message: error.details[0].message,
+        });
+      }
+      return res.status(500).json({
+        message: error.message,
+      })
+    }
+  },
+
+  deletePoint: async (req, res) => {
+    try {
+      // check if pertemuan exists
+      const { kode_pertemuan, nim } = req.params;
+      const pertemuan = await prisma.pertemuan.findUnique({
+        where: {
+          id: kode_pertemuan,
+        },
+      });
+      if (!pertemuan) {
+        return res.status(404).json({
+          message:
+            "Pertemuan dengan kode " + kode_pertemuan + " tidak ditemukan",
+        });
+      }
+      // check if point exists
+      const point = await prisma.point.findFirst({
+        where: {
+          AND: [
+            {
+              pertemuan: kode_pertemuan,
+            },
+            {
+              nim: nim,
+            },
+          ],
+        },
+      });
+      if (!point) {
+        return res.status(404).json({
+          message: "Poin dengan nim " + nim + " tidak ditemukan",
+        });
+      }
+      // delete point
+      const deletedPoint = await prisma.point.delete({
+        where: {
+          id: point.id,
+        },
+      });
+      return res.json({
+        message: "Poin berhasil dihapus",
+        data: deletedPoint,
       });
     } catch (error) {
       console.log(error);

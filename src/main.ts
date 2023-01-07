@@ -1,14 +1,9 @@
 const express = require('express');
-const app = express();
 const prisma = require('./configs/database');
-const poinRoutes = require('./routes/PoinRoute');
-const pertemuanRoutes = require('./routes/PertemuanRoute');
+import createServer from './utils/server';
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use('/poin', poinRoutes);
-app.use('/pertemuan', pertemuanRoutes);
-
+//  create server
+const app = createServer();
 
 //  if database is connected, then start the server
 prisma.$connect().then(() => {

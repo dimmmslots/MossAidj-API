@@ -4,7 +4,7 @@ import { pertemuan } from "../types/ApiResponse";
 import { isExist } from "../utils/isExist";
 
 const PertemuanController = {
-  createPertemuan: async (req, res) => {
+  createPertemuan: async (req, res, next) => {
     try {
       const { kelas, makul, pertemuan } = req.body;
       // validate body
@@ -18,7 +18,7 @@ const PertemuanController = {
         },
       });
       if (pertemuanExists) {
-        return res.status(400).json({
+        return res.status(409).json({
           message: "Pertemuan dengan kode " + kode_pertemuan + " sudah ada",
         });
       }
@@ -37,6 +37,11 @@ const PertemuanController = {
         data: data.id,
       });
     } catch (error) {
+      if (error.isJoi) {
+        return res.status(400).json({
+          message: error.details[0].message,
+        });
+      }
       return res.status(500).json({
         message: error.message,
       });
@@ -47,15 +52,6 @@ const PertemuanController = {
     try {
       // get value from url params
       const { kode_pertemuan } = req.params;
-      // check kd_kelas format with regex
-      const regex = new RegExp(
-        /^[0-9][M|P][0-9][0-9]A-((ALG)|(DES))-\d{1}(\d)?$/i
-      );
-      if (!regex.test(kode_pertemuan)) {
-        return res.status(400).json({
-          message: "Kode kelas tidak sesuai format",
-        });
-      }
 
       // check if pertemuan exists
       const pertemuanExists = await prisma.pertemuan.findUnique({
@@ -79,7 +75,7 @@ const PertemuanController = {
       newLabel = newLabel.toLowerCase();
       let oldQuiz = pertemuanExists.quiz.split(",");
       if (!oldQuiz.includes(oldLabel)) {
-        return res.status(400).json({
+        return res.status(404).json({
           message: "Label quiz '" + oldLabel + "' tidak ditemukan",
         });
       } else {
@@ -89,7 +85,7 @@ const PertemuanController = {
           });
         } else {
           if (oldQuiz.includes(newLabel)) {
-            return res.status(400).json({
+            return res.status(409).json({
               message: "Label quiz '" + newLabel + "' sudah ada",
             });
           } else {
@@ -112,6 +108,11 @@ const PertemuanController = {
         }
       }
     } catch (error) {
+      if (error.isJoi) {
+        return res.status(400).json({
+          message: error.details[0].message,
+        });
+      }
       return res.status(500).json({
         message: error.message,
       });
@@ -121,16 +122,6 @@ const PertemuanController = {
   deleteQuizPertemuan: async (req, res) => {
     try {
       const { kode_pertemuan } = req.params;
-      // check kd_kelas format with regex
-      const regex = new RegExp(
-        /^[0-9][M|P][0-9][0-9]A-((ALG)|(DES))-\d{1}(\d)?$/i
-      );
-      if (!regex.test(kode_pertemuan)) {
-        return res.status(400).json({
-          message: "Kode kelas tidak sesuai format",
-        });
-      }
-
       const pertemuanExists = await isExist.pertemuan(kode_pertemuan);
 
       if (!pertemuanExists) {
@@ -182,12 +173,17 @@ const PertemuanController = {
             quiz: newQuiz,
           },
         });
-        return res.json({
+        return res.status(200).json({
           message: "Label quiz berhasil dihapus",
           data: pertemuanUpdated,
         });
       }
     } catch (error) {
+      if (error.isJoi) {
+        return res.status(400).json({
+          message: error.details[0].message,
+        });
+      }
       return res.status(500).json({
         message: error.message,
       });
@@ -198,14 +194,6 @@ const PertemuanController = {
     try {
       // cek kode pertemuan dengan regex
       const { kode_pertemuan } = req.params;
-      const regex = new RegExp(
-        /^[0-9][M|P][0-9][0-9]A-((ALG)|(DES))-\d{1}(\d)?$/i
-      );
-      if (!regex.test(kode_pertemuan)) {
-        return res.status(400).json({
-          message: "Kode kelas tidak sesuai format",
-        });
-      }
       const pertemuanExists = await isExist.pertemuan(kode_pertemuan);
       if (!pertemuanExists) {
         return res.status(404).json({
@@ -259,12 +247,54 @@ const PertemuanController = {
             quiz: newLabels,
           },
         });
-        return res.json({
+        return res.status(201).json({
           message: "Label quiz berhasil ditambahkan",
           data: pertemuanUpdated,
         });
       }
     } catch (error) {
+      if (error.isJoi) {
+        return res.status(400).json({
+          message: error.details[0].message,
+        });
+      }
+      return res.status(500).json({
+        message: error.message,
+      });
+    }
+  },
+
+  deletePertemuan: async (req, res) => {
+    try {
+      const { kode_pertemuan } = req.params;
+      const pertemuanExists = await isExist.pertemuan(kode_pertemuan);
+      if (!pertemuanExists) {
+        return res.status(404).json({
+          message:
+            "Pertemuan dengan kode " + kode_pertemuan + " tidak ditemukan",
+        });
+      } else {
+        const pointDeleted = await prisma.point.deleteMany({
+          where: {
+            pertemuan: kode_pertemuan,
+          },
+        });
+        const pertemuanDeleted = await prisma.pertemuan.delete({
+          where: {
+            id: kode_pertemuan,
+          },
+        });
+        return res.status(200).json({
+          message: "Pertemuan berhasil dihapus",
+          data: pointDeleted,
+        });
+      }
+    } catch (error) {
+      if (error.isJoi) {
+        return res.status(400).json({
+          message: error.details[0].message,
+        });
+      }
       return res.status(500).json({
         message: error.message,
       });
