@@ -1,5 +1,6 @@
 import { Router } from "express";
 import PertemuanController from "../controllers/PertemuanController";
+const jwtValidation = require("../middlewares/jwtValidation");
 
 const router = Router();
 
